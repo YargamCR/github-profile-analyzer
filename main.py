@@ -1,3 +1,4 @@
+import analyzer
 import github_api
 import utilities
 
@@ -6,29 +7,48 @@ utilities.clear_terminal()
 
 def menu(opt, user):
     match opt:
-
         case 1:
-            cont = 1
             repos = github_api.get_user_repositories(user)
             utilities.clear_terminal()
             print(
-                f"========================================\nVIEW REPOSITORIES({user})\n========================================")
+                f"========================================\nVIEW REPOSITORIES({user})\n========================================"
+            )
             for i, repository in enumerate(repos):
-                print(f"{i+1}.{repository['name']}")
-                cont = cont + 1
+                print(f"{i + 1}.{repository['name']}")
             print("\n\n========================================\n\n")
 
             input("Press enter to continue...")
             utilities.clear_terminal()
             user_search(user)
         case 2:
-            print("")
+            repos = github_api.get_user_repositories(user)
+            print(analyzer.get_language_stats(repos))
+            input("Press enter to continue...")
         case 3:
-            print("")
+            repos = github_api.get_user_repositories(user)
+            print(analyzer.sort_repositories_by_stars(repos))
+            input("Press enter to continue...")
+
         case 4:
-            print("")
+            print()
         case 5:
-            print("")
+            print()
+
+
+def most_rated_repos(user):
+    repositories = github_api.get_user_repositories(user)
+
+    total_stars = analyzer.get_total_stars(repositories)
+
+    languages = analyzer.get_language_stats(repositories)
+
+    sorted_repos = analyzer.sort_repositories_by_stars(repositories)
+
+    print(
+        f"========================================\nREPOSITORY ANALYSIS({user})\n========================================"
+    )
+    print(f"Total starts: {total_stars}")
+    analyzer.get_most_starred_repo(repositories)
 
 
 def user_search(user):
@@ -51,21 +71,26 @@ def user_search(user):
 
 
 while True:
-    print("========================================\nGITHUB PROFILE ANALYZER\n========================================")
+    print(
+        "========================================\nGITHUB PROFILE ANALYZER\n========================================"
+    )
     username = input("Enter GitHub username:")
     if user_search(username) is False:
         break
     else:
         while True:
-            print("1. View repositories\n2. Sort repositories by stars\n3. View language statistics\n4. Save report\n5. Search another user\n6. Exit")
+            print(
+                "1. View repositories\n2. Sort repositories by stars\n3. View language statistics\n4. Save report\n5. Search another user\n6. Exit"
+            )
             option = int(input("-----> "))
             print("\n\n========================================\n\n")
-            if option > 1 and option < 5:
+            if option <= 0 and option >= 6:
                 print("Wrong option, please try again...")
             elif option == 6:
                 break
             else:
                 menu(option, username)
+                most_rated_repos(username)
     if option == 6:
         print("Closing App...")
         break
