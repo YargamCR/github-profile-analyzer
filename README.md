@@ -97,9 +97,9 @@ Enter a GitHub username when prompted.
 ==================================================
              GITHUB PROFILE ANALYZER
 ==================================================
-Enter a GitHub username: octocat
+Enter a GitHub username: YargamCR
 
-Fetching data for octocat...
+Fetching data for YargamCR...
 ```
 
 The application displays the profile information, total repository stars, most-starred repository, language statistics, and top 5 repositories.
