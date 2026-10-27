@@ -2,5 +2,16 @@ import os
 
 
 def clear_terminal():
-    # 'nt' means Windows, otherwise it defaults to Mac/Linux
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system("cls" if os.name == "nt" else "clear")
+
+
+def print_header(title):
+    border = "=" * 50
+
+    print(border)
+    print(title.center(50))
+    print(border)
+
+
+def pause():
+    input("\nPress Enter to continue...")

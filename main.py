@@ -1,96 +1,110 @@
-import analyzer
-import github_api
-import utilities
-
-utilities.clear_terminal()
-
-
-def menu(opt, user):
-    match opt:
-        case 1:
-            repos = github_api.get_user_repositories(user)
-            utilities.clear_terminal()
-            print(
-                f"========================================\nVIEW REPOSITORIES({user})\n========================================"
-            )
-            for i, repository in enumerate(repos):
-                print(f"{i + 1}.{repository['name']}")
-            print("\n\n========================================\n\n")
-
-            input("Press enter to continue...")
-            utilities.clear_terminal()
-            user_search(user)
-        case 2:
-            repos = github_api.get_user_repositories(user)
-            print(analyzer.get_language_stats(repos))
-            input("Press enter to continue...")
-        case 3:
-            repos = github_api.get_user_repositories(user)
-            print(analyzer.sort_repositories_by_stars(repos))
-            input("Press enter to continue...")
-
-        case 4:
-            print()
-        case 5:
-            print()
+from analyzer import (
+    get_language_stats,
+    get_most_starred_repo,
+    get_total_stars,
+    sort_repositories_by_stars,
+)
+from github_api import get_user_profile, get_user_repositories
+from utilities import clear_terminal, pause, print_header
 
 
-def most_rated_repos(user):
-    repositories = github_api.get_user_repositories(user)
+def display_profile(profile):
+    print_header("GITHUB PROFILE")
 
-    total_stars = analyzer.get_total_stars(repositories)
-
-    languages = analyzer.get_language_stats(repositories)
-
-    sorted_repos = analyzer.sort_repositories_by_stars(repositories)
-
-    print(
-        f"========================================\nREPOSITORY ANALYSIS({user})\n========================================"
-    )
-    print(f"Total starts: {total_stars}")
-    analyzer.get_most_starred_repo(repositories)
+    print(f"Username: {profile.get('login', 'N/A')}")
+    print(f"Name: {profile.get('name') or 'Not provided'}")
+    print(f"Followers: {profile.get('followers', 0)}")
+    print(f"Following: {profile.get('following', 0)}")
+    print(f"Public repositories: {profile.get('public_repos', 0)}")
+    print(f"Profile URL: {profile.get('html_url', 'N/A')}")
 
 
-def user_search(user):
-    profile = github_api.get_user_profile(user)
-    # USER NOT FOUND ERROR 404
-    if profile == 404:
-        return False
-    # USER FOUND
+def display_analysis(repositories):
+    print_header("REPOSITORY ANALYSIS")
+
+    print(f"Repositories analyzed: {len(repositories)}")
+    print(f"Total stars: {get_total_stars(repositories)}")
+
+    most_starred = get_most_starred_repo(repositories)
+
+    if most_starred is not None:
+        print(f"\nMost-starred repository: {most_starred.get('name', 'Unknown')}")
+        print(f"Stars: {most_starred.get('stargazers_count', 0)}")
+        print(f"URL: {most_starred.get('html_url', 'N/A')}")
     else:
-        name = profile["name"]
-        if name is None:
-            name = "Not provided"
-        print(f"Username: {profile['login']}")
-        print(f"Name: {name}")
-        print(f"Public repositories: {profile['public_repos']}")
-        print(f"Followers: {profile['followers']}")
-        print(f"Following: {profile['following']}")
-        print(f"Profile: {profile['html_url']}")
-        print("\n\n========================================\n\n")
+        print("\nThis user has no public repositories.")
 
+    languages = get_language_stats(repositories)
 
-while True:
-    print(
-        "========================================\nGITHUB PROFILE ANALYZER\n========================================"
-    )
-    username = input("Enter GitHub username:")
-    if user_search(username) is False:
-        break
+    if languages:
+        print("\nLanguages by repository count:")
+
+        sorted_languages = sorted(
+            languages.items(), key=lambda item: item[1], reverse=True
+        )
+
+        for language, count in sorted_languages:
+            print(f"  {language}: {count}")
+
+        most_used_language = max(languages, key=languages.get)
+
+        print(
+            f"\nMost-used language: {most_used_language} "
+            f"({languages[most_used_language]} repositories)"
+        )
     else:
-        while True:
+        print("\nNo programming language data available.")
+
+    print("\nTop 5 repositories by stars:")
+
+    top_repositories = sort_repositories_by_stars(repositories)[:5]
+
+    if top_repositories:
+        for rank, repo in enumerate(top_repositories, start=1):
             print(
-                "1. View repositories\n2. Sort repositories by stars\n3. View language statistics\n4. Save report\n5. Search another user\n6. Exit"
+                f"{rank}. {repo.get('name', 'Unknown')} - "
+                f"{repo.get('stargazers_count', 0)} stars"
             )
-            option = int(input("-----> "))
-            print("\n\n========================================\n\n")
-            if option <= 0 and option >= 6:
-                print("Wrong option, please try again...")
-            elif option == 6:
-                break
-            else:
-                menu(option, username)
-                most_rated_repos(username)
-    if option == 6:
-        print("Closing App...")
-        break
+    else:
+        print("No repositories to display.")
+
+
+def main():
+    clear_terminal()
+    print_header("GITHUB PROFILE ANALYZER")
+
+    username = input("Enter a GitHub username: ").strip()
+
+    if not username:
+        print("\nUsername cannot be empty.")
+        return
+
+    print(f"\nFetching data for {username}...")
+
+    profile = get_user_profile(username)
+
+    if profile is None:
+        print(
+            "\nCould not retrieve the profile. "
+            "Check the username, your internet connection, "
+            "and any error displayed above."
+        )
+        return
+
+    repositories = get_user_repositories(username)
+
+    if repositories is None:
+        print("\nCould not retrieve the repositories. Please try again later.")
+        return
+
+    print()
+    display_profile(profile)
+
+    print()
+    display_analysis(repositories)
+
+    pause()
+
+
+if __name__ == "__main__":
+    main()
